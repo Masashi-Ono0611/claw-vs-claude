@@ -38,10 +38,15 @@ export async function POST(req: NextRequest) {
   const WALLET = process.env.SOLANA_WALLET;
 
   if (!SOL_PK || !WALLET) {
-    return Response.json(
-      { error: "SOLANA_pk / SOLANA_WALLET not configured on server" },
-      { status: 500 },
-    );
+    // 公開デモではsigning keyを意図的に置かない (誰でもwallet払出を防ぐ)。
+    return Response.json({
+      ok: false,
+      demo: true,
+      kind: plan.kind,
+      message:
+        "🌐 Public demo mode: signing key is not configured on this deployment, so no real transaction was sent. Clone the repo and run locally with SOLANA_pk in .env to actually execute.",
+      plan,
+    });
   }
 
   const connection = new Connection(RPC, { commitment: "confirmed" });

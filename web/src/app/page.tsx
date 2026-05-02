@@ -50,6 +50,8 @@ interface ExecuteResult {
   asset?: string;
   amountUi?: number;
   error?: string;
+  demo?: boolean;
+  message?: string;
 }
 
 export default function Home() {
@@ -339,9 +341,29 @@ export default function Home() {
         </div>
 
         {execResult && (
-          <div className="mt-4 bg-slate-900 border-2 border-yellow-600 rounded-xl p-4">
-            <h3 className="text-xl font-bold text-yellow-400 mb-2">
-              🚀 Execution Result
+          <div
+            className={`mt-4 bg-slate-900 border-2 rounded-xl p-4 ${
+              execResult.demo
+                ? "border-purple-600"
+                : execResult.signature
+                  ? "border-yellow-600"
+                  : "border-red-600"
+            }`}
+          >
+            <h3
+              className={`text-xl font-bold mb-2 ${
+                execResult.demo
+                  ? "text-purple-400"
+                  : execResult.signature
+                    ? "text-yellow-400"
+                    : "text-red-400"
+              }`}
+            >
+              {execResult.demo
+                ? "🌐 Public Demo Mode"
+                : execResult.signature
+                  ? "🚀 Execution Result"
+                  : "❌ Execution Failed"}
             </h3>
             {execResult.signature ? (
               <div>
@@ -358,6 +380,10 @@ export default function Home() {
                   {execResult.signature}
                 </a>
               </div>
+            ) : execResult.demo ? (
+              <p className="text-sm text-slate-300 leading-relaxed">
+                {execResult.message}
+              </p>
             ) : execResult.error ? (
               <p className="text-sm text-red-400">❌ {execResult.error}</p>
             ) : (
@@ -367,6 +393,18 @@ export default function Home() {
             )}
           </div>
         )}
+
+        <footer className="mt-8 text-center text-xs text-slate-600">
+          built for Clawathon Tokyo Edition · Jupiter ⨉ OpenClaw ·{" "}
+          <a
+            href="https://github.com/jup-ag/agent-skills"
+            className="hover:text-slate-400"
+            target="_blank"
+            rel="noreferrer"
+          >
+            agent-skills
+          </a>
+        </footer>
       </div>
     </main>
   );

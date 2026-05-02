@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# web/ — Claw vs Claude debate UI
 
-## Getting Started
+Next.js 16 (App Router) + Tailwind. Streams two AI personas debating a Jupiter Yield strategy, lets the user vote, then sends the winning plan onchain.
 
-First, run the development server:
+> See the [project root README](../README.md) for the full overview, demo flow, and verified onchain signatures.
+
+## Local setup
 
 ```bash
+# from project root, ensure .env exists
+ln -sf ../.env .env.local
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local` is symlinked to project-root `.env` so secrets live in one place.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Files
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Path | Purpose |
+|---|---|
+| `src/app/page.tsx` | Two-column debate UI with SSE consumer + vote buttons |
+| `src/app/api/debate/route.ts` | SSE: spawns 2 personas in parallel, streams every text/tool event |
+| `src/app/api/execute/route.ts` | POST `{plan}`: signs + sends onchain (or returns demo response if no `SOLANA_pk`) |
+| `src/lib/debate.mjs` | Persona definitions + `runPersonaDebate()` orchestrator |
+| `src/lib/jupiter.mjs` | Jupiter helpers (mirror of `prototype/lib/jupiter.mjs`) |
+| `next.config.ts` | `serverExternalPackages` for Jupiter SDK + `@coral-xyz/anchor` (Turbopack ESM workaround) |
 
-## Learn More
+## Required env vars
 
-To learn more about Next.js, take a look at the following resources:
+Loaded from project-root `.env` via the symlink.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Var | For | Required |
+|---|---|---|
+| `ANTHROPIC_BASE_URL` | Anthropic SDK / proxy URL | ✅ |
+| `ANTHROPIC_AUTH_TOKEN` | Bearer token | ✅ |
+| `ANTHROPIC_MODEL` | model id (default `claude-opus-4-7`) | – |
+| `JUPITER_API_KEY` | Swap v2 (read + execute) | ✅ |
+| `SOLANA_RPC` | RPC URL | ✅ |
+| `SOLANA_WALLET` | wallet pubkey | ✅ |
+| `SOLANA_pk` | Base58 secret key for signing | optional (omit for read-only public deploy) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy notes (Vercel)
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Set all env vars **except `SOLANA_pk`** for public deploy → `/api/execute` returns "Public Demo Mode" instead of signing
+- Set `SOLANA_pk` only for trusted/private deployments
+- Build runs as Node (route handlers use Node native modules via `serverExternalPackages`)
