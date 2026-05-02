@@ -14,11 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Claw vs Claude · Yield Council",
+  title: "Baby Fund Council 🎁 — for Mike & family",
   description:
-    "Two AI agents (Claude + Claw 🦞) debate a Jupiter Yield strategy. " +
-    "User votes. Winner executes onchain on Solana mainnet. " +
-    "Built for Clawathon Tokyo Edition.",
+    "Pre-celebrating Mike's incoming baby with onchain yield. " +
+    "Two AI agents (Claude + Claw 🦞) debate the next best Jupiter " +
+    "move; user votes; winner executes on Solana mainnet. " +
+    "Built with love for Clawathon Tokyo Edition.",
 };
 
 export default function RootLayout({

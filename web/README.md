@@ -1,6 +1,6 @@
-# web/ — Claw vs Claude debate UI
+# web/ — 👶 For Mike's Baby 🎁 (council UI)
 
-Next.js 16 (App Router) + Tailwind. Streams two AI personas debating a Jupiter Yield strategy, lets the user vote, then sends the winning plan onchain.
+Next.js 16 (App Router) + Tailwind. Streams two AI personas (🤖 Claude + 🦞 Claw) debating a Jupiter Yield move for Mike's incoming baby fund. The visitor connects their own Solana wallet, votes, and signs the winning gift onchain.
 
 > See the [project root README](../README.md) for the full overview, demo flow, and verified onchain signatures.
 
@@ -40,8 +40,9 @@ Loaded from project-root `.env` via the symlink.
 | `ANTHROPIC_MODEL` | model id (default `claude-opus-4-7`) | – |
 | `JUPITER_API_KEY` | Swap v2 (read + execute) | ✅ |
 | `SOLANA_RPC` | RPC URL | ✅ |
-| `SOLANA_WALLET` | wallet pubkey | ✅ |
+| `SOLANA_WALLET` | wallet pubkey (only used by `prototype/` CLIs, not the web app) | – |
 | `SOLANA_pk` | Not used by the web app — signing is done by the visitor's wallet | ❌ never set on Vercel |
+| `TEST_MAX_AMOUNT_UI` | Local-only cap on proposed amounts (e.g. `0.1`) | – |
 
 ## Deploy notes (Vercel)
 
