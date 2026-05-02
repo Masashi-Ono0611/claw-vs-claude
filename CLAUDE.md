@@ -1,22 +1,23 @@
 # Clawathon Tokyo Edition
 
-Jupiter (Solana DeFi) エコシステムを中心としたAIエージェントを構築するハッカソンプロジェクト。
+Hackathon project: AI agent built on the Jupiter (Solana DeFi) ecosystem.
 
-## 技術コンテキスト
-- **対象チェーン**: Solana mainnet
-- **対象プロトコル**: Jupiter Suite（Swap v2, Lend, Perps, Trigger, Recurring, Tokens, Price, Portfolio, Send, Studio）
-- **想定ターゲット**: Yield Autopilot系の自律rebalanceエージェント
+## Technical context
+- **Chain**: Solana mainnet
+- **Protocols**: Jupiter Suite (Swap v2, Lend, Perps, Trigger, Recurring, Tokens, Price, Portfolio, Send, Studio)
+- **Target shape**: Yield-Autopilot-style autonomous rebalance agents
 
-## エージェント運用ルール
-- 「vault」「APY」「swap」「lend」「borrow」「rebalance」等のDeFi用語は**Jupiter Lend/Swap文脈**として解釈する
-- 価格・ルート・vault情報の取得は **Jupiter REST API** (`api.jup.ag`) または **`@jup-ag/lend-read` SDK** を第一選択にする
-- 一般DeFi/他プロトコル(Aave, Morpho, Pendle等)へのWeb Searchに**走らない** — Jupiter Agent Skillsの`integrating-jupiter` / `jupiter-lend` を必ず最初に検討
-- 書き込み系(deposit/withdraw/swap execute)は `@jup-ag/lend` および `/swap/v2/execute` を使用
+## Agent operating rules
+- DeFi terms ("vault", "APY", "swap", "lend", "borrow", "rebalance") are interpreted in the **Jupiter Lend / Swap context**
+- For prices, routes, and vault info, use the **Jupiter REST API** (`api.jup.ag`) or the **`@jup-ag/lend-read` SDK** as the first choice
+- Do **not** Web Search for general DeFi or other protocols (Aave, Morpho, Pendle, etc.) — always check the Jupiter Agent Skills `integrating-jupiter` / `jupiter-lend` first
+- For write operations (deposit / withdraw / swap execute), use `@jup-ag/lend` and `/swap/v2/execute`
 
-## インストール済みスキル
-- `integrate-jupiter@jup-ag-skills` (user scope) — `vendor/agent-skills/` に実体あり
-- 提供スキル: `integrating-jupiter`, `jupiter-lend`, `jupiter-swap-migration`, `jupiter-vrfd`
+## Installed skills
+- `integrate-jupiter@jup-ag-skills` (user scope) — source at `vendor/agent-skills/`
+- Provides: `integrating-jupiter`, `jupiter-lend`, `jupiter-swap-migration`, `jupiter-vrfd`
 
-## ドキュメント
-- アイデア整理: `docs/hackathon-ideas-jupiter.md`
-- フィジビリティ結果: 本会話履歴を参照
+## Documentation
+- Idea exploration: `docs/hackathon-ideas-jupiter.md`
+- Demo script: `docs/demo-script.md`
+- Cleanup notes: `docs/installed-artifacts.md`

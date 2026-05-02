@@ -84,7 +84,7 @@ export default function Home() {
   const { publicKey, connected, signTransaction } = useWallet();
 
   const [question, setQuestion] = useState(
-    "Mikeさんの赤ちゃんファンドを優しく増やす、次のbest moveは？",
+    "What's the next gentle move to grow Mike's baby fund?",
   );
   const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState<Record<Persona, string[]>>({
@@ -291,7 +291,7 @@ export default function Home() {
             <p className="mt-2 inline-flex items-center gap-2 text-rose-700">
               <span aria-hidden className="h-px w-5 bg-rose-300" />
               <span className="italic text-sm">
-                MikeさんのBaby へ、Solana yieldで前祝いを
+                A pre-baby gift for Mike, powered by Solana yield
               </span>
               <span aria-hidden className="h-px w-5 bg-rose-300" />
             </p>
