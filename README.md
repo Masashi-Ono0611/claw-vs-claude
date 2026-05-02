@@ -1,8 +1,8 @@
-# 👶 For Mike's Baby 🎁
+# Jupiter Funds For Mike's Baby 👶🎁
 
-> Mikeさんの**Baby**へ、Solana yield で前祝いを。
-> Two AI agents (🤖 Claude + 🦞 Claw) debate the best Jupiter move; you vote;
-> the winning gift is sent **onchain** to grow Mike's incoming baby fund.
+> A pre-baby celebration. Two AI agents (🤖 Claude + 🦞 Claw) debate the best
+> Jupiter yield move; you vote; the winning gift is sent **onchain** to grow
+> the fund for Jupiter teammate Mike's incoming baby.
 
 Built for **Clawathon Tokyo Edition** (2026-05-02).
 
@@ -13,24 +13,24 @@ Built for **Clawathon Tokyo Edition** (2026-05-02).
 
 ## What this is
 
-The hackathon ask: **AIの「思考」とブロックチェーンの「執行」を統合し、人間の介在なしにタスクを完結させる**.
+The hackathon ask: **integrate AI "reasoning" with blockchain "execution" so an agent can complete a task with no human in the loop.**
 
-This project answers it with the smallest interesting unit of "agent disagreement", wrapped in a heartful frame: **pre-celebrating Jupiter teammate Mike's incoming baby with Solana yield**.
+This project answers it with the smallest interesting unit of "agent disagreement", wrapped in a heartful frame: **pre-celebrating Jupiter teammate Mike's incoming baby with onchain Solana yield**.
 
-1. You ask the council a free-form question (default: *"Mikeさんの赤ちゃんファンドを優しく増やす次のbest moveは？"*).
+1. You ask the council a free-form question (default: *"What's the next gentle move to grow Mike's baby fund?"*).
 2. **Two personas of Claude** are spun up in parallel via the Anthropic SDK:
-   - 🤖 **Claude** — calm, data-driven, "$X gain ≈ おむつ代 Y円 相当" comparisons
-   - 🦞 **Claw** — kansai-ben lobster cosplaying as OpenClaw, "ベビーカー代に化けるで!"
-3. Both must call `get_wallet_balances` first (so they propose realistic amounts), then call any of `get_jltoken_apys`, `get_lend_position`, `get_swap_quote`, and finally `propose_action` with confidence.
+   - 🤖 **Claude** — calm, data-driven, includes comparisons like *"$X gain ≈ Y diapers"*
+   - 🦞 **Claw** — kansai-ben lobster cosplaying as OpenClaw, *"this'll turn into a stroller!"*
+3. Both must call `get_wallet_balances` first (so they propose realistic amounts), then any of `get_jltoken_apys`, `get_lend_position`, `get_swap_quote`, and finally `propose_action` with a confidence score.
 4. The UI streams both thoughts side-by-side via SSE.
 5. You **connect your own Solana wallet** (Phantom / Solflare / Backpack via wallet-standard auto-discovery) and click **💝 Sponsor with Claude / Claw** on the proposal you like.
-6. The server builds an **unsigned** transaction (Jupiter Swap v2 order or `@jup-ag/lend` ixs).
+6. The server builds an **unsigned** transaction (Jupiter Swap v2 order or `@jup-ag/lend` instructions).
 7. Your wallet signs locally; the signed tx is submitted (Jupiter `/swap/v2/execute` for swap, direct RPC for lend).
 8. "🎉 Gift delivered onchain!" + Solscan signature.
 
 **No server-side wallet keys.** Every gift is signed by the visitor's own wallet.
 
-Read the [demo script](./docs/demo-script.md) for the 3-minute walkthrough.
+See the [demo script](./docs/demo-script.md) for the 3-minute walkthrough.
 
 ---
 
@@ -58,7 +58,7 @@ Read the [demo script](./docs/demo-script.md) for the 3-minute walkthrough.
 │   └── lib/jupiter.mjs                  Source of truth for helpers
 │
 └── docs/
-    ├── hackathon-ideas-jupiter.md       原案アイデア整理
+    ├── hackathon-ideas-jupiter.md       initial idea exploration
     ├── demo-script.md                   3-minute demo walkthrough
     └── installed-artifacts.md           cleanup notes
 ```
@@ -76,7 +76,7 @@ cd claw-vs-claude
 cat > .env <<'EOF'
 ANTHROPIC_BASE_URL=https://api.anthropic.com         # or your Anthropic-compatible proxy
 ANTHROPIC_AUTH_TOKEN=sk-ant-...                      # Bearer token
-ANTHROPIC_MODEL=claude-opus-4-7
+ANTHROPIC_MODEL=claude-sonnet-4-6
 JUPITER_API_KEY=jup_...                              # portal.jup.ag
 SOLANA_RPC=https://api.mainnet-beta.solana.com       # or Helius/QuickNode for higher RPS
 SOLANA_WALLET=YourWalletPublicKey                    # used by prototype CLIs
@@ -97,7 +97,7 @@ cd ../prototype
 npm install
 node verify-keypair.mjs               # confirms keypair derives expected pubkey (rejects if mismatch)
 node smoke-read.mjs                    # APY ranking smoke test
-node agent.mjs --allow-write "0.1 USDCをlendに入れて"
+node agent.mjs --allow-write "deposit 0.1 USDC into lend"
 ```
 
 > The web app **never reads `SOLANA_pk`** — it's only used by the standalone `prototype/` CLI scripts. The web app always uses the visitor's connected wallet.
@@ -120,7 +120,7 @@ node agent.mjs --allow-write "0.1 USDCをlendに入れて"
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Anthropic Claude (claude-opus-4-7)         │
+│  Anthropic Claude (claude-sonnet-4-6)       │
 │  └ tool_use loop ⨉ 2 personas in parallel   │
 ├─────────────────────────────────────────────┤
 │  Next.js 16 (App Router) + Tailwind         │
@@ -156,9 +156,9 @@ Influences:
 
 ## With love
 
-This project is a sincere little gift to **Mike & family** at Jupiter.
-Built in one day, signed onchain, runs on real money.
-May your baby grow up watching the value of yielded SOL go up. 🌱
+A small, sincere gift to **Mike & family** at Jupiter — built in one day,
+signed onchain, runs on real money. May your baby grow up watching the value
+of yielded SOL go up. 🌱
 
 ---
 
