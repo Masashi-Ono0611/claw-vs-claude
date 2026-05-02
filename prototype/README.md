@@ -1,12 +1,12 @@
 # prototype/ — CLI scripts (no UI)
 
-Anthropic SDK + Jupiter Agent Skills + Jupiter Lend/Swap SDK を直接統合した最小実装。
-自然言語1コマンドで Solana mainnet 上の swap / lend を実行する。
+Headless reference implementation of the same primitives the web app uses:
+Anthropic SDK + Jupiter Agent Skills + Jupiter Lend/Swap SDK directly integrated.
+One natural-language command → real swap or lend tx on Solana mainnet.
 
-> Web UI 版 (Claw vs Claude) は [`../web/`](../web/) にあります。
-> プロジェクト全体は [`../README.md`](../README.md)。
-> 詳しいデモ手順は [`../docs/demo-script.md`](../docs/demo-script.md)、
-> アイデア背景は [`../docs/hackathon-ideas-jupiter.md`](../docs/hackathon-ideas-jupiter.md)。
+> Web UI: [`../web/`](../web/) (Jupiter Funds For Mike's Baby).
+> Project root: [`../README.md`](../README.md).
+> Demo script: [`../docs/demo-script.md`](../docs/demo-script.md).
 
 ---
 
