@@ -291,7 +291,7 @@ export default function Home() {
             <p className="mt-2 inline-flex items-center gap-2 text-rose-700">
               <span aria-hidden className="h-px w-5 bg-rose-300" />
               <span className="italic text-sm">
-                Mikeさんの赤ちゃんへ、Solana yieldで前祝いを
+                MikeさんのBaby へ、Solana yieldで前祝いを
               </span>
               <span aria-hidden className="h-px w-5 bg-rose-300" />
             </p>
