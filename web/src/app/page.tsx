@@ -288,8 +288,12 @@ export default function Home() {
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-stone-900">
               👶 For Mike&apos;s Baby 🎁
             </h1>
-            <p className="text-stone-600 text-sm mt-1">
-              Mikeさんの赤ちゃんへ、Solana yieldで前祝いを。
+            <p className="mt-2 inline-flex items-center gap-2 text-rose-700">
+              <span aria-hidden className="h-px w-5 bg-rose-300" />
+              <span className="italic text-sm">
+                Mikeさんの赤ちゃんへ、Solana yieldで前祝いを
+              </span>
+              <span aria-hidden className="h-px w-5 bg-rose-300" />
             </p>
           </div>
           <WalletMultiButton />
