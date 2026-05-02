@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Baby Fund Council 🎁 — for Mike & family",
+  title: "Jupiter Funds For Mike's Baby 👶🎁",
   description:
     "Pre-celebrating Mike's incoming baby with onchain yield. " +
     "Two AI agents (Claude + Claw 🦞) debate the next best Jupiter " +

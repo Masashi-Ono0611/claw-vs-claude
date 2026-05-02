@@ -286,7 +286,7 @@ export default function Home() {
         <header className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-stone-900">
-              👶 For Mike&apos;s Baby 🎁
+              👶 Jupiter Funds For Mike&apos;s Baby 🎁
             </h1>
             <p className="mt-2 inline-flex items-center gap-2 text-rose-700">
               <span aria-hidden className="h-px w-5 bg-rose-300" />
