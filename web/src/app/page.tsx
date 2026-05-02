@@ -286,7 +286,7 @@ export default function Home() {
         <header className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-stone-900">
-              🎁 For Mike&apos;s Baby
+              👶 For Mike&apos;s Baby 🎁
             </h1>
             <p className="text-stone-600 text-sm mt-1">
               Mikeさんの赤ちゃんへ、Solana yieldで前祝いを。
