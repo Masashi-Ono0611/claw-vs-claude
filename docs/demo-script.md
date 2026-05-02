@@ -21,7 +21,7 @@ Clawathon Tokyo Edition submission demo. Target: **3 minutes**.
 
 | Item | Value |
 |------|-------|
-| Live demo | https://claw-vs-claude.vercel.app |
+| Live demo | _(retired post-hackathon — run locally)_ |
 | Source | https://github.com/Masashi-Ono0611/claw-vs-claude |
 | Network | Solana mainnet-beta |
 | Model | `claude-sonnet-4-6` (via proxy) |
@@ -31,7 +31,7 @@ Clawathon Tokyo Edition submission demo. Target: **3 minutes**.
 ## 2. Live walkthrough (3 stages, ~150s)
 
 ### Stage 1 — Connect & Ask (30s)
-1. Open the URL — pastel hero, "👶 Jupiter Funds For Mike's Baby 🎁"
+1. `cd web && npm run dev` then open http://localhost:3000 — pastel hero, "👶 Jupiter Funds For Mike's Baby 🎁"
 2. Click **Connect Wallet** → Phantom (or Solflare/Backpack)
 3. Click **💝 ASK THE COUNCIL**
 4. Talk over: *"Two Claudes wake up at the same time. Same tools, opposite personalities."*

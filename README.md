@@ -6,8 +6,9 @@
 
 Built for **Clawathon Tokyo Edition** (2026-05-02).
 
-🌐 **Live demo**: <https://claw-vs-claude.vercel.app>
 📦 **Repo**: <https://github.com/Masashi-Ono0611/claw-vs-claude>
+
+> The public Vercel deploy was taken down after the hackathon. Run locally with the steps below.
 
 ---
 
@@ -101,18 +102,6 @@ node agent.mjs --allow-write "deposit 0.1 USDC into lend"
 ```
 
 > The web app **never reads `SOLANA_pk`** — it's only used by the standalone `prototype/` CLI scripts. The web app always uses the visitor's connected wallet.
-
----
-
-## Public demo
-
-**Live at <https://claw-vs-claude.vercel.app>**.
-
-- ✅ Real debate streams in real time (SSE)
-- ✅ Both agents produce real proposals using real Jupiter API calls
-- ✅ Connect your own Solana wallet → execute the winning plan onchain with your own keys
-- 🔒 No server-side signing keys at all — Vercel never sees any `SOLANA_pk`
-- 💸 Bring your own SOL (gas) and USDC. Recommended: **start with $0.10–$1 to play safely**.
 
 ---
 

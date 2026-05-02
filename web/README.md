@@ -44,8 +44,10 @@ Loaded from project-root `.env` via the symlink.
 | `SOLANA_pk` | Not used by the web app — signing is done by the visitor's wallet | ❌ never set on Vercel |
 | `TEST_MAX_AMOUNT_UI` | Local-only cap on proposed amounts (e.g. `0.1`) | – |
 
-## Deploy notes (Vercel)
+## Deploy notes (if redeploying)
 
 - Set the env vars listed above (except `SOLANA_pk`)
 - Visitors connect their own wallets; the server never holds a signing key
 - Build runs as Node (route handlers use Node native modules via `serverExternalPackages`)
+
+> The original Vercel deploy was deleted after the hackathon. Re-link with `vercel link` then `vercel --prod`.
