@@ -4,9 +4,10 @@
 > Jupiter yield move; you vote; the winning gift is sent **onchain** to grow
 > the fund for Jupiter teammate Mike's incoming baby.
 
-Built for **Clawathon Tokyo Edition** (2026-05-02).
+🏆 **Jupiter Prize — 1st Winner** at [Clawathon Tokyo Edition](https://app.akindo.io/wave-hacks/eaKEp9dxBH8JwEErg) (2026-05-02).
 
 📦 **Repo**: <https://github.com/Masashi-Ono0611/claw-vs-claude>
+🪪 **Product page (Akindo)**: <https://app.akindo.io/communities/janA9g18qU63eJvB/products/63ZnGOzxnh7PBME8>
 
 > The public Vercel deploy was taken down after the hackathon. Run locally with the steps below.
 
