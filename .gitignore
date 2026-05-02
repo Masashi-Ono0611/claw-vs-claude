@@ -1,0 +1,25 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Node
+prototype/node_modules/
+prototype/.npm/
+**/node_modules/
+
+# External cloned references (not part of this project)
+vendor/
+
+# Next.js
+web/.next/
+web/out/
+web/.turbo/
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
