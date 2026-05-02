@@ -17,6 +17,13 @@ import {
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-7";
 const RPC = process.env.SOLANA_RPC || "https://api.mainnet-beta.solana.com";
 const API_KEY = process.env.JUPITER_API_KEY;
+const TEST_MAX_AMOUNT_UI = process.env.TEST_MAX_AMOUNT_UI
+  ? Number(process.env.TEST_MAX_AMOUNT_UI)
+  : null;
+
+const TEST_MODE_NOTE = TEST_MAX_AMOUNT_UI
+  ? `\n\n⚠️ TEST MODE: amountUi must be ≤ ${TEST_MAX_AMOUNT_UI} for any token. Treat the wallet as if it only had ${TEST_MAX_AMOUNT_UI} units of any asset.`
+  : "";
 
 // ---------- read-only tools (debate phase) ----------
 const TOOLS = [
@@ -115,8 +122,8 @@ const PERSONAS = {
 ルール:
 1. **必ず最初に get_wallet_balances を呼んで実残高を確認する。**
 2. その後 1〜2回 read系を追加で呼んで状況把握。
-3. propose_action では amount を **実残高の50%以下** に抑える。SOLを使う取引なら gas 用に最低 0.005 SOL は残す。
-4. amount=0 や残高超過の提案は厳禁。残高がほぼ無ければ no_action。
+3. propose_action では amount を **実残高の50%以下** に抑える。lend_deposit/lend_withdraw は SOL gas が ~0.005 SOL 必要 (足りなければ swap を選ぶ)。**swap は Jupiter v2 の gasless route で SOL ほぼ不要なので、SOL 残少時の第一選択にする**。
+4. amount=0 や残高超過の提案は厳禁。残高がほぼ無ければ no_action。${TEST_MODE_NOTE}
 `,
   },
   claw: {
@@ -140,8 +147,8 @@ const PERSONAS = {
 
 ルール:
 1. **必ず最初に get_wallet_balances を呼んで実残高を確認する。**
-2. propose_action の amount は **実残高の80%以下**。SOL gas用に最低 0.005 SOL は残す。
-3. 残高超過は絶対NG、わいの誇りに関わるで。残高が殆ど無ければ "EXFOLIATE the empty wallet" と言って no_action。
+2. propose_action の amount は **実残高の80%以下**。lend は SOL gas ~0.005 SOL 必要。**swap はJupiter v2 gasless で SOL不要やから、SOL少ない時はswap推し**。
+3. 残高超過は絶対NG、わいの誇りに関わるで。残高が殆ど無ければ "EXFOLIATE the empty wallet" と言って no_action。${TEST_MODE_NOTE}
 `,
   },
 };

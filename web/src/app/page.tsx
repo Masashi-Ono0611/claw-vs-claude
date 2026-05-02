@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   useConnection,
   useWallet,
 } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { VersionedTransaction } from "@solana/web3.js";
+
+// SSR を切って WalletMultiButton の hydration mismatch を回避
+const WalletMultiButton = dynamic(
+  () =>
+    import("@solana/wallet-adapter-react-ui").then(
+      (m) => m.WalletMultiButton,
+    ),
+  { ssr: false },
+);
 
 type Persona = "claude" | "claw";
 

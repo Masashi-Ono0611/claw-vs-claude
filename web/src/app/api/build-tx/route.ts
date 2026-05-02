@@ -63,6 +63,19 @@ export async function POST(req: NextRequest) {
     return Response.json({ kind: "no_action", note: "agent decided to do nothing" });
   }
 
+  // Test-mode hard cap (server-side backstop)
+  const TEST_MAX = process.env.TEST_MAX_AMOUNT_UI
+    ? Number(process.env.TEST_MAX_AMOUNT_UI)
+    : null;
+  if (TEST_MAX != null && plan.amountUi != null && plan.amountUi > TEST_MAX) {
+    return Response.json(
+      {
+        error: `TEST MODE: amountUi ${plan.amountUi} exceeds max ${TEST_MAX}. Adjust the agent's proposal or unset TEST_MAX_AMOUNT_UI in .env.`,
+      },
+      { status: 400 },
+    );
+  }
+
   const connection = new Connection(RPC, { commitment: "confirmed" });
 
   try {
