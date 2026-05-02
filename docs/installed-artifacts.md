@@ -64,6 +64,9 @@
 | `prototype/node_modules/` | npm packages: `@solana/web3.js`, `bn.js`, `@jup-ag/lend`, `@jup-ag/lend-read` 等 ~370個 |
 | `prototype/smoke-read.mjs` | Jupiter Lend SDK スモークテスト |
 | `prototype/inspect-sdk.mjs`, `inspect-rate.mjs` | デバッグ用 |
+| `web/` | Next.js 16 アプリ (Claw vs Claude UI) |
+| `web/node_modules/` | Next.js + React 19 + 上記Jupiter系 + `@anthropic-ai/sdk` 等 ~700個 |
+| `web/.env.local` | `../.env` への symlink (single source of truth) |
 
 ---
 
