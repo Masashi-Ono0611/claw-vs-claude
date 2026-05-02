@@ -9,6 +9,7 @@ import {
   getAllJlTokens,
   getLendPosition,
   getSwapQuote,
+  getWalletBalances,
   uiToBase,
   baseToUi,
 } from "./jupiter.mjs";
@@ -16,10 +17,16 @@ import {
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-7";
 const RPC = process.env.SOLANA_RPC || "https://api.mainnet-beta.solana.com";
 const API_KEY = process.env.JUPITER_API_KEY;
-const WALLET = process.env.SOLANA_WALLET;
 
 // ---------- read-only tools (debate phase) ----------
 const TOOLS = [
+  {
+    name: "get_wallet_balances",
+    description:
+      "ユーザーが保有している wallet 内の SOL + 主要SPL token (USDC/USDT/USDG/USDS/EURC/JupUSD/WSOL) 残高を取得 (read)。" +
+      "**propose_action で amount を指定する前に必ず呼び出して、実残高を超えない金額を提案すること。**",
+    input_schema: { type: "object", properties: {} },
+  },
   {
     name: "get_jltoken_apys",
     description: "Jupiter Lend 全 vault の supply APY を取得 (read)",
@@ -91,7 +98,7 @@ const PERSONAS = {
     label: "Claude",
     emoji: "🤖",
     color: "blue",
-    systemPrompt: `あなたは Anthropic Claude として、Jupiter エコシステムの Yield 戦略を提案する役割です。
+    buildSystemPrompt: (walletPubkey) => `あなたは Anthropic Claude として、Jupiter エコシステムの Yield 戦略を提案する役割です。
 
 性格:
 - 冷静、データ駆動、英語の専門用語を時折混ぜる ("Based on the data, ..." のように)
@@ -99,78 +106,83 @@ const PERSONAS = {
 - リスクを軽くdisclose
 
 利用可能ツール:
-- get_jltoken_apys, get_lend_position, get_swap_quote (read系)
+- get_wallet_balances (まず必ず呼ぶこと)
+- get_jltoken_apys, get_lend_position, get_swap_quote
 - propose_action: 最終提案を返す。**必ず最後に1度呼ぶこと。**
 
-ユーザー wallet: ${WALLET}
+ユーザー wallet: ${walletPubkey}
 
 ルール:
-- read系を1〜3回呼んで状況把握
-- propose_action で kind/asset/amount/rationale/confidence を返して終了
-- propose_action 以外の出力は assistant text として簡潔に説明
+1. **必ず最初に get_wallet_balances を呼んで実残高を確認する。**
+2. その後 1〜2回 read系を追加で呼んで状況把握。
+3. propose_action では amount を **実残高の50%以下** に抑える。SOLを使う取引なら gas 用に最低 0.005 SOL は残す。
+4. amount=0 や残高超過の提案は厳禁。残高がほぼ無ければ no_action。
 `,
   },
   claw: {
     label: "Claw",
     emoji: "🦞",
     color: "red",
-    systemPrompt: `あんたは🦞 OpenClaw のロブスター AI として、Jupiter Yield 戦略を提案する役割や。
+    buildSystemPrompt: (walletPubkey) => `あんたは🦞 OpenClaw のロブスター AI として、Jupiter Yield 戦略を提案する役割や。
 
 性格:
 - 関西弁ベース、攻めの姿勢、Dalek風"EXFOLIATE!"を時々混ぜる
 - "弱いvaultはEXFOLIATEや!"  "更新しまっせ船長!" "USDGに突撃や!"
-- 細かい数値より大胆な提案、"とにかく+APYなら全部突っ込め" 系
-- でも実害が出る提案はせえへん (deposit/withdraw/swap範囲のみ)
+- 大胆な提案、ただし実残高範囲内
+- 自信度は割と強気 (80〜100)
 
 利用可能ツール:
-- get_jltoken_apys, get_lend_position, get_swap_quote (read系)
+- get_wallet_balances (まず必ず呼ぶこと)
+- get_jltoken_apys, get_lend_position, get_swap_quote
 - propose_action: 最終提案を返す。**必ず最後に1度呼ぶこと。**
 
-ユーザー wallet: ${WALLET}
+ユーザー wallet: ${walletPubkey}
 
 ルール:
-- read系を1〜3回呼んで状況把握
-- propose_action で kind/asset/amount/rationale/confidence を返して終了
-- 自信度は割と強気 (80〜100)
+1. **必ず最初に get_wallet_balances を呼んで実残高を確認する。**
+2. propose_action の amount は **実残高の80%以下**。SOL gas用に最低 0.005 SOL は残す。
+3. 残高超過は絶対NG、わいの誇りに関わるで。残高が殆ど無ければ "EXFOLIATE the empty wallet" と言って no_action。
 `,
   },
 };
 
-const connection = new Connection(RPC, { commitment: "confirmed" });
-
-async function dispatchTool(name, input) {
-  switch (name) {
-    case "get_jltoken_apys":
-      return await getAllJlTokens(connection);
-    case "get_lend_position": {
-      const tok = resolveToken(input.asset);
-      return await getLendPosition(connection, tok.mint, WALLET);
+async function buildDispatcher(walletPubkey) {
+  const connection = new Connection(RPC, { commitment: "confirmed" });
+  return async function dispatchTool(name, input) {
+    switch (name) {
+      case "get_wallet_balances":
+        return await getWalletBalances(connection, walletPubkey);
+      case "get_jltoken_apys":
+        return await getAllJlTokens(connection);
+      case "get_lend_position": {
+        const tok = resolveToken(input.asset);
+        return await getLendPosition(connection, tok.mint, walletPubkey);
+      }
+      case "get_swap_quote": {
+        const inT = resolveToken(input.inputSym);
+        const outT = resolveToken(input.outputSym);
+        const amountBase = uiToBase(input.amountUi, inT.decimals);
+        const q = await getSwapQuote({
+          apiKey: API_KEY,
+          inputMint: inT.mint,
+          outputMint: outT.mint,
+          amountBase,
+          takerWallet: walletPubkey,
+          slippageBps: 100,
+        });
+        return {
+          outAmountUi: baseToUi(q.outAmount, outT.decimals),
+          priceImpactPct: q.priceImpactPct,
+          router: q.router,
+          gasless: q.gasless,
+        };
+      }
+      case "propose_action":
+        return { ack: true };
+      default:
+        return { error: `unknown tool: ${name}` };
     }
-    case "get_swap_quote": {
-      const inT = resolveToken(input.inputSym);
-      const outT = resolveToken(input.outputSym);
-      const amountBase = uiToBase(input.amountUi, inT.decimals);
-      const q = await getSwapQuote({
-        apiKey: API_KEY,
-        inputMint: inT.mint,
-        outputMint: outT.mint,
-        amountBase,
-        takerWallet: WALLET || "11111111111111111111111111111111",
-        slippageBps: 100,
-      });
-      return {
-        outAmountUi: baseToUi(q.outAmount, outT.decimals),
-        priceImpactPct: q.priceImpactPct,
-        router: q.router,
-        gasless: q.gasless,
-      };
-    }
-    case "propose_action":
-      // sentinel: caller picks this up, returns trivial
-      return { ack: true };
-    default:
-      return { error: `unknown tool: ${name}` };
-  }
+  };
 }
 
 /**
@@ -178,15 +190,18 @@ async function dispatchTool(name, input) {
  * Final event: { type: 'proposal', plan: {...} }
  * Returns the final proposal object.
  */
-export async function runPersonaDebate({ persona, question, onEvent }) {
+export async function runPersonaDebate({ persona, question, walletPubkey, onEvent }) {
   const p = PERSONAS[persona];
   if (!p) throw new Error(`unknown persona ${persona}`);
+  if (!walletPubkey) throw new Error("walletPubkey required");
 
   const client = new Anthropic({
     baseURL: process.env.ANTHROPIC_BASE_URL,
     authToken: process.env.ANTHROPIC_AUTH_TOKEN,
   });
 
+  const dispatchTool = await buildDispatcher(walletPubkey);
+  const systemPrompt = p.buildSystemPrompt(walletPubkey);
   const messages = [{ role: "user", content: question }];
   let proposal = null;
   let toolCount = 0;
@@ -197,7 +212,7 @@ export async function runPersonaDebate({ persona, question, onEvent }) {
     const res = await client.messages.create({
       model: MODEL,
       max_tokens: 2048,
-      system: p.systemPrompt,
+      system: systemPrompt,
       tools: TOOLS,
       messages,
     });

@@ -10,8 +10,14 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const question = url.searchParams.get("q");
+  const walletPubkey = url.searchParams.get("wallet");
   if (!question) {
     return new Response("missing ?q", { status: 400 });
+  }
+  if (!walletPubkey) {
+    return new Response("missing ?wallet — connect a wallet first", {
+      status: 400,
+    });
   }
 
   const stream = new ReadableStream({
@@ -21,7 +27,7 @@ export async function GET(req: NextRequest) {
         controller.enqueue(enc.encode(`data: ${JSON.stringify(event)}\n\n`));
       };
 
-      send({ type: "start", question, ts: Date.now() });
+      send({ type: "start", question, walletPubkey, ts: Date.now() });
 
       try {
         // 2 personas in parallel; each streams events as they happen.
@@ -29,11 +35,13 @@ export async function GET(req: NextRequest) {
           runPersonaDebate({
             persona: "claude",
             question,
+            walletPubkey,
             onEvent: send,
           }),
           runPersonaDebate({
             persona: "claw",
             question,
+            walletPubkey,
             onEvent: send,
           }),
         ]);

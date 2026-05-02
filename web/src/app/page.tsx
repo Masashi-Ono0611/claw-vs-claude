@@ -103,6 +103,10 @@ export default function Home() {
 
   function startDebate() {
     if (running) return;
+    if (!connected || !publicKey) {
+      alert("Wallet を接続してください (右上の Connect Wallet)");
+      return;
+    }
     setRunning(true);
     setLogs({ claude: [], claw: [] });
     setResults({ claude: null, claw: null });
@@ -110,7 +114,7 @@ export default function Home() {
     setExecResult(null);
 
     const es = new EventSource(
-      `/api/debate?q=${encodeURIComponent(question)}`,
+      `/api/debate?q=${encodeURIComponent(question)}&wallet=${publicKey.toBase58()}`,
     );
     es.onmessage = (ev) => {
       try {
@@ -303,10 +307,15 @@ export default function Home() {
           />
           <button
             onClick={startDebate}
-            disabled={running || !question.trim()}
+            disabled={running || !question.trim() || !connected}
             className="px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-700 disabled:cursor-not-allowed rounded-lg font-bold text-sm transition"
+            title={!connected ? "Connect wallet first" : ""}
           >
-            {running ? "⏳ Debating..." : "▶ START DEBATE"}
+            {running
+              ? "⏳ Debating..."
+              : !connected
+                ? "🔗 Connect Wallet first"
+                : "▶ START DEBATE"}
           </button>
         </div>
 

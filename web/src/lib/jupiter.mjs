@@ -72,6 +72,30 @@ export async function getAllJlTokens(connection) {
     .sort((a, b) => b.supplyApyPct - a.supplyApyPct);
 }
 
+// Wallet balances: SOL + 主要SPL tokens を一度の RPC呼出セットで取得
+export async function getWalletBalances(connection, walletPubkey) {
+  const SPL_TOKEN_PROGRAM = new PublicKey(
+    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+  );
+  const owner = new PublicKey(walletPubkey);
+  const [solLamports, accs] = await Promise.all([
+    connection.getBalance(owner),
+    connection.getParsedTokenAccountsByOwner(owner, {
+      programId: SPL_TOKEN_PROGRAM,
+    }),
+  ]);
+  const out = [{ symbol: "SOL", amountUi: solLamports / 1e9, mint: "native" }];
+  for (const a of accs.value) {
+    const info = a.account.data.parsed.info;
+    const mint = info.mint;
+    const amt = Number(info.tokenAmount.uiAmountString || "0");
+    if (amt <= 0) continue;
+    const sym = SYMBOL_BY_MINT[mint] ?? null;
+    if (sym) out.push({ symbol: sym, amountUi: amt, mint });
+  }
+  return out;
+}
+
 export async function getLendPosition(connection, assetMint, walletPubkey) {
   const client = new Client(connection);
   const pos = await client.lending.getUserPosition(
