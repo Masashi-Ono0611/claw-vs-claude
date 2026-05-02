@@ -20,9 +20,11 @@ npm run dev
 
 | Path | Purpose |
 |---|---|
-| `src/app/page.tsx` | Two-column debate UI with SSE consumer + vote buttons |
+| `src/app/page.tsx` | Two-column debate UI + wallet adapter + sign/submit flow |
 | `src/app/api/debate/route.ts` | SSE: spawns 2 personas in parallel, streams every text/tool event |
-| `src/app/api/execute/route.ts` | POST `{plan}`: signs + sends onchain (or returns demo response if no `SOLANA_pk`) |
+| `src/app/api/build-tx/route.ts` | POST: builds an unsigned tx for the chosen plan (Jupiter Swap order or `@jup-ag/lend` ixs) |
+| `src/app/api/submit-swap/route.ts` | POST: proxy of signed swap → Jupiter `/swap/v2/execute` (server-side x-api-key) |
+| `src/components/WalletProviders.tsx` | `ConnectionProvider` + `WalletProvider` + modal styles |
 | `src/lib/debate.mjs` | Persona definitions + `runPersonaDebate()` orchestrator |
 | `src/lib/jupiter.mjs` | Jupiter helpers (mirror of `prototype/lib/jupiter.mjs`) |
 | `next.config.ts` | `serverExternalPackages` for Jupiter SDK + `@coral-xyz/anchor` (Turbopack ESM workaround) |
@@ -39,10 +41,10 @@ Loaded from project-root `.env` via the symlink.
 | `JUPITER_API_KEY` | Swap v2 (read + execute) | ✅ |
 | `SOLANA_RPC` | RPC URL | ✅ |
 | `SOLANA_WALLET` | wallet pubkey | ✅ |
-| `SOLANA_pk` | Base58 secret key for signing | optional (omit for read-only public deploy) |
+| `SOLANA_pk` | Not used by the web app — signing is done by the visitor's wallet | ❌ never set on Vercel |
 
 ## Deploy notes (Vercel)
 
-- Set all env vars **except `SOLANA_pk`** for public deploy → `/api/execute` returns "Public Demo Mode" instead of signing
-- Set `SOLANA_pk` only for trusted/private deployments
+- Set the env vars listed above (except `SOLANA_pk`)
+- Visitors connect their own wallets; the server never holds a signing key
 - Build runs as Node (route handlers use Node native modules via `serverExternalPackages`)

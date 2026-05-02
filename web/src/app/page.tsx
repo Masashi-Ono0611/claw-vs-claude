@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  useConnection,
+  useWallet,
+} from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { VersionedTransaction } from "@solana/web3.js";
 
 type Persona = "claude" | "claw";
 
@@ -43,18 +49,31 @@ interface StreamEvent {
   stats?: { toolCount: number; inputTokens: number; outputTokens: number };
 }
 
-interface ExecuteResult {
-  ok?: boolean;
+interface ExecResult {
   signature?: string;
   kind?: string;
   asset?: string;
   amountUi?: number;
   error?: string;
-  demo?: boolean;
-  message?: string;
+}
+
+// browser-safe base64 helpers (avoids Node Buffer which may not be polyfilled)
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+function bytesToB64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
 }
 
 export default function Home() {
+  const { connection } = useConnection();
+  const { publicKey, connected, signTransaction } = useWallet();
+
   const [question, setQuestion] = useState(
     "今のwallet状況をふまえて、yieldを最大化する次の1手を提案して",
   );
@@ -69,14 +88,12 @@ export default function Home() {
   });
   const [winner, setWinner] = useState<Persona | null>(null);
   const [executing, setExecuting] = useState(false);
-  const [execResult, setExecResult] = useState<ExecuteResult | null>(null);
+  const [execResult, setExecResult] = useState<ExecResult | null>(null);
   const claudeColRef = useRef<HTMLDivElement | null>(null);
   const clawColRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    claudeColRef.current?.scrollTo({
-      top: claudeColRef.current.scrollHeight,
-    });
+    claudeColRef.current?.scrollTo({ top: claudeColRef.current.scrollHeight });
     clawColRef.current?.scrollTo({ top: clawColRef.current.scrollHeight });
   }, [logs]);
 
@@ -95,7 +112,6 @@ export default function Home() {
     const es = new EventSource(
       `/api/debate?q=${encodeURIComponent(question)}`,
     );
-
     es.onmessage = (ev) => {
       try {
         const event: StreamEvent = JSON.parse(ev.data);
@@ -156,19 +172,85 @@ export default function Home() {
   }
 
   async function vote(p: Persona) {
+    if (executing || winner !== null) return;
+    if (!connected || !publicKey || !signTransaction) {
+      alert("Wallet を接続してください (右上の Connect Wallet)");
+      return;
+    }
     const r = results[p];
-    if (!r || executing) return;
+    if (!r) return;
     setWinner(p);
     setExecuting(true);
     setExecResult(null);
     try {
-      const res = await fetch("/api/execute", {
+      // 1. Build unsigned tx server-side (bound to user's pubkey)
+      const buildRes = await fetch("/api/build-tx", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: r.proposal }),
+        body: JSON.stringify({
+          plan: r.proposal,
+          walletPubkey: publicKey.toBase58(),
+        }),
       });
-      const json = (await res.json()) as ExecuteResult;
-      setExecResult(json);
+      const built = await buildRes.json();
+      if (!buildRes.ok || built.error) {
+        setExecResult({ error: built.error ?? `build HTTP ${buildRes.status}` });
+        return;
+      }
+      if (built.kind === "no_action") {
+        setExecResult({ kind: "no_action" });
+        return;
+      }
+
+      // 2. Deserialize, sign with wallet adapter
+      const tx = VersionedTransaction.deserialize(b64ToBytes(built.txBase64));
+      const signed = await signTransaction(tx);
+
+      // 3. Submit
+      let signature: string | undefined;
+      if (built.kind === "swap") {
+        // proxy to Jupiter /swap/v2/execute (needs x-api-key)
+        const signedB64 = bytesToB64(signed.serialize());
+        const submitRes = await fetch("/api/submit-swap", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            signedTxBase64: signedB64,
+            requestId: built.requestId,
+          }),
+        });
+        const submitJson = await submitRes.json();
+        if (!submitRes.ok || !submitJson.signature) {
+          setExecResult({
+            error:
+              submitJson.error ??
+              `submit HTTP ${submitRes.status}: ${JSON.stringify(submitJson)}`,
+          });
+          return;
+        }
+        signature = submitJson.signature as string;
+      } else {
+        // lend_deposit / lend_withdraw — direct send to RPC
+        signature = await connection.sendRawTransaction(signed.serialize(), {
+          skipPreflight: false,
+          maxRetries: 3,
+        });
+        await connection.confirmTransaction(
+          {
+            signature,
+            blockhash: built.latestBlockhash.blockhash,
+            lastValidBlockHeight: built.latestBlockhash.lastValidBlockHeight,
+          },
+          "confirmed",
+        );
+      }
+
+      setExecResult({
+        signature,
+        kind: built.kind,
+        asset: built.meta?.asset ?? built.quote?.outputSym,
+        amountUi: built.meta?.amountUi ?? built.quote?.inAmountUi,
+      });
     } catch (e) {
       setExecResult({ error: e instanceof Error ? e.message : String(e) });
     } finally {
@@ -188,16 +270,28 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 p-6">
       <div className="max-w-7xl mx-auto">
-        <header className="text-center mb-6">
-          <h1 className="text-4xl font-bold tracking-tight">
-            <span className="text-blue-400">🤖 CLAUDE</span>
-            <span className="text-slate-500 mx-3">vs</span>
-            <span className="text-red-400">CLAW 🦞</span>
-          </h1>
-          <p className="text-slate-400 mt-1 text-sm">
-            Yield Council on Jupiter (Solana mainnet) — natural language → onchain
-          </p>
+        <header className="mb-6 flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">
+              <span className="text-blue-400">🤖 CLAUDE</span>
+              <span className="text-slate-500 mx-3">vs</span>
+              <span className="text-red-400">CLAW 🦞</span>
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Yield Council on Jupiter (Solana mainnet) — natural language → onchain
+            </p>
+          </div>
+          <WalletMultiButton />
         </header>
+
+        {connected && publicKey && (
+          <div className="mb-3 text-xs text-slate-400">
+            connected:{" "}
+            <span className="font-mono text-slate-300">
+              {publicKey.toBase58()}
+            </span>
+          </div>
+        )}
 
         <div className="mb-4 flex gap-2">
           <input
@@ -265,14 +359,16 @@ export default function Home() {
                 </p>
                 <button
                   onClick={() => vote("claude")}
-                  disabled={executing || winner !== null}
+                  disabled={executing || winner !== null || !connected}
                   className="mt-3 w-full py-2 rounded-md text-sm font-bold transition bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:cursor-not-allowed"
                 >
                   {winner === "claude"
                     ? executing
                       ? "⏳ Executing..."
                       : "👑 WINNER"
-                    : "VOTE 🤖"}
+                    : !connected
+                      ? "🔗 Connect Wallet to vote"
+                      : "VOTE 🤖"}
                 </button>
               </div>
             )}
@@ -326,14 +422,16 @@ export default function Home() {
                 </p>
                 <button
                   onClick={() => vote("claw")}
-                  disabled={executing || winner !== null}
+                  disabled={executing || winner !== null || !connected}
                   className="mt-3 w-full py-2 rounded-md text-sm font-bold transition bg-red-600 hover:bg-red-500 disabled:bg-slate-700 disabled:cursor-not-allowed"
                 >
                   {winner === "claw"
                     ? executing
                       ? "⏳ Executing..."
                       : "👑 WINNER"
-                    : "VOTE 🦞"}
+                    : !connected
+                      ? "🔗 Connect Wallet to vote"
+                      : "VOTE 🦞"}
                 </button>
               </div>
             )}
@@ -343,27 +441,17 @@ export default function Home() {
         {execResult && (
           <div
             className={`mt-4 bg-slate-900 border-2 rounded-xl p-4 ${
-              execResult.demo
-                ? "border-purple-600"
-                : execResult.signature
-                  ? "border-yellow-600"
-                  : "border-red-600"
+              execResult.signature
+                ? "border-yellow-600"
+                : "border-red-600"
             }`}
           >
             <h3
               className={`text-xl font-bold mb-2 ${
-                execResult.demo
-                  ? "text-purple-400"
-                  : execResult.signature
-                    ? "text-yellow-400"
-                    : "text-red-400"
+                execResult.signature ? "text-yellow-400" : "text-red-400"
               }`}
             >
-              {execResult.demo
-                ? "🌐 Public Demo Mode"
-                : execResult.signature
-                  ? "🚀 Execution Result"
-                  : "❌ Execution Failed"}
+              {execResult.signature ? "🚀 Execution Result" : "❌ Error"}
             </h3>
             {execResult.signature ? (
               <div>
@@ -380,16 +468,8 @@ export default function Home() {
                   {execResult.signature}
                 </a>
               </div>
-            ) : execResult.demo ? (
-              <p className="text-sm text-slate-300 leading-relaxed">
-                {execResult.message}
-              </p>
-            ) : execResult.error ? (
-              <p className="text-sm text-red-400">❌ {execResult.error}</p>
             ) : (
-              <p className="text-sm text-slate-300">
-                {JSON.stringify(execResult)}
-              </p>
+              <p className="text-sm text-red-400">{execResult.error}</p>
             )}
           </div>
         )}
@@ -403,6 +483,15 @@ export default function Home() {
             rel="noreferrer"
           >
             agent-skills
+          </a>{" "}
+          ·{" "}
+          <a
+            href="https://github.com/Masashi-Ono0611/claw-vs-claude"
+            className="hover:text-slate-400"
+            target="_blank"
+            rel="noreferrer"
+          >
+            source
           </a>
         </footer>
       </div>

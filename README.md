@@ -21,9 +21,12 @@ This project answers it with the smallest interesting unit of "agent disagreemen
    - 🦞 **Claw** — kansai-ben lobster cosplaying as OpenClaw, "EXFOLIATE!" energy
 3. Both call the same Jupiter tools (`get_jltoken_apys`, `get_lend_position`, `get_swap_quote`) and produce a `propose_action` plan with confidence.
 4. The UI streams both thoughts side-by-side via SSE.
-5. The user clicks **VOTE** on the winning plan.
-6. The server signs and sends the transaction via Jupiter Swap v2 / `@jup-ag/lend`.
-7. Solscan signature returned.
+5. The user **connects their own Solana wallet** (Phantom / Solflare / Backpack via wallet-standard auto-discovery) and clicks **VOTE** on the winning plan.
+6. The server builds an **unsigned** transaction (Jupiter Swap v2 order or `@jup-ag/lend` ixs).
+7. The wallet signs locally; the signed tx is submitted (Jupiter `/execute` for swap, direct RPC for lend).
+8. Solscan signature returned.
+
+**No server-side wallet keys.** Every action is signed by the visitor's own wallet.
 
 Read the [demo script](./docs/demo-script.md) for the 3-minute walkthrough.
 
@@ -35,9 +38,12 @@ Read the [demo script](./docs/demo-script.md) for the 3-minute walkthrough.
 .
 ├── web/             — Next.js 16 app (Claw vs Claude UI)
 │   ├── src/app/
-│   │   ├── page.tsx                     UI
+│   │   ├── page.tsx                     UI + wallet adapter + sign/submit flow
 │   │   ├── api/debate/route.ts          SSE: 2 agents in parallel
-│   │   └── api/execute/route.ts         POST: winner's plan onchain
+│   │   ├── api/build-tx/route.ts        POST: build unsigned tx for the chosen plan
+│   │   └── api/submit-swap/route.ts     POST: proxy signed swap to Jupiter /execute
+│   ├── src/components/
+│   │   └── WalletProviders.tsx          ConnectionProvider + WalletProvider
 │   └── src/lib/
 │       ├── debate.mjs                   2 personas + tool dispatcher
 │       └── jupiter.mjs                  Jupiter helpers (copied from prototype)
@@ -93,16 +99,15 @@ node agent.mjs --allow-write "0.1 USDCをlendに入れて"
 
 ---
 
-## Public demo (read-only)
+## Public demo
 
-The Vercel deploy intentionally **does not** include `SOLANA_pk`, so:
+**Live at <https://claw-vs-claude.vercel.app>**.
 
-- ✅ Debate streams in real time
-- ✅ Both agents produce real proposals (real Jupiter API calls)
-- ✅ VOTE → server returns "Public Demo Mode" notice instead of executing
-- ❌ No real transaction is sent (this is by design — anyone could drain the wallet)
-
-To see real onchain execution, **clone the repo and run locally** with your own wallet.
+- ✅ Debate streams in real time (SSE)
+- ✅ Both agents produce real proposals using real Jupiter API calls
+- ✅ Connect your own Solana wallet (Phantom / Solflare / Backpack — wallet-standard auto-discovery) to **execute the winning plan onchain with your own keys**
+- 🔒 No server-side signing keys at all — Vercel never sees your `SOLANA_pk`
+- 💸 Bring your own SOL (gas) and USDC (or any supported asset). Recommended: **start with $0.10–$1 to play safely**.
 
 ---
 
